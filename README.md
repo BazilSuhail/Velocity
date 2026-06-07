@@ -8,6 +8,11 @@
 
 **Velocity** is a cross-platform command-macro engine that lets you store, browse, and execute frequently used terminal commands under short, memorable names. Think of it as a personal hotkey registry for your shell.
 
+![Velocity CLI](docs/velo-cli.png)
+
+> [!NOTE]
+> Velocity runs entirely in the terminal. No GUI, no daemon, no cloud dependency. Just a single binary and a JSON file.
+
 ---
 
 ## Features
@@ -19,6 +24,11 @@
 - **Cross-platform** -- Works on Windows, Linux, and macOS
 - **Hot gradient ASCII** -- Branded neon-red-to-orange header on every screen
 - **Single binary** -- No runtime dependencies; just download and run
+
+---
+
+> [!IMPORTANT]
+> Velocity is currently in active development. Breaking changes to the JSON schema may occur before a stable 1.0 release. Always back up `macros.json` before updating.
 
 ---
 
@@ -64,6 +74,9 @@ curl -sL https://github.com/BazilSuhail/Velocity/releases/latest/download/velo-x
 
 ## Usage
 
+> [!TIP]
+> For a full walkthrough of every command with runnable examples, see the [Commands Reference](docs/commands.md).
+
 ### Commands
 
 | Command | Description |
@@ -97,6 +110,9 @@ Running `velo` with no arguments opens the interactive menu:
 - `q` -- Quit
 
 The first time you enter, **Exit** is selected by default.
+
+> [!NOTE]
+> The TUI enters raw terminal mode while active. When you run or edit a macro, Velocity automatically exits raw mode, runs the command, and re-enters raw mode afterward.
 
 ---
 
