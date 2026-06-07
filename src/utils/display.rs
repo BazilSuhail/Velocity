@@ -31,6 +31,16 @@ pub fn warn(msg: impl AsRef<str>) {
     println!("  {}  {}", "▲".bright_yellow(), msg.as_ref().bright_white());
 }
 
+pub fn truncate(s: &str, max: usize) -> String {
+    if s.len() <= max {
+        s.to_string()
+    } else if max > 3 {
+        format!("{}…", &s[..max - 1])
+    } else {
+        s[..max].to_string()
+    }
+}
+
 pub fn list_table(store: &crate::utils::storage::MacroStore) {
     if store.macros.is_empty() {
         println!();
@@ -54,7 +64,7 @@ pub fn list_table(store: &crate::utils::storage::MacroStore) {
         println!(
             "  {:<20} {:<38} {:<8} {}",
             key.as_str().bright_cyan(),
-            entry.command.as_str().bright_white(),
+            truncate(&entry.command, 38).bright_white(),
             date.bright_yellow(),
             time.bright_yellow(),
         );

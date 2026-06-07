@@ -1,13 +1,13 @@
 mod utils;
+mod services;
 
 use clap::Parser;
 use colored::*;
 
-use utils::{add, delete, list, run, tui, update};
+use services::{add, delete, list, run, tui, update};
 
 fn print_colored_help() {
     println!();
-    // Modern un-boxed ASCII art with a smooth Red -> Crimson -> Orange gradient
     println!("{}", "      ██╗   ██╗███████╗██╗     ██████╗ ".truecolor(255, 50, 50).bold());
     println!("{}", "      ██║   ██║██╔════╝██║    ██╔═══██╗".truecolor(255, 90, 30).bold());
     println!("{}", "      ██║   ██║█████╗  ██║    ██║   ██║".truecolor(255, 130, 10).bold());
@@ -109,22 +109,17 @@ struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,
 
-    /// Macro key to run (e.g. `velo dev`)
     key: Option<String>,
 }
 
 #[derive(Parser)]
 enum Commands {
-    /// Add a new macro
     Add {
         key: Option<String>,
         command: Option<String>,
     },
-    /// Delete a macro
     Delete { key: Option<String> },
-    /// List all macros
     List,
-    /// Update an existing macro
     Update {
         key: Option<String>,
         command: Option<String>,

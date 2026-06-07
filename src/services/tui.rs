@@ -7,7 +7,7 @@ use crossterm::{
 };
 use std::io::{stdin, stdout, Write};
 
-use crate::utils::display::{self, fmt_dt};
+use crate::utils::display::{self, fmt_dt, truncate};
 use crate::utils::storage::{load_macros, save_macros, timestamp_now};
 
 use crossterm::cursor::MoveTo;
@@ -114,7 +114,7 @@ fn draw_main_menu(
     keys: &[String],
     selected: &MenuIdx,
 ) {
-    execute!(stdout, MoveTo(0, 0)).ok();
+    execute!(stdout, MoveTo(0, 0), Clear(ClearType::All)).ok();
 
     let count = keys.len();
     draw_banner(count);
@@ -150,7 +150,7 @@ fn draw_main_menu(
                 "  {} {:<20} {:<38} {:<8} {}",
                 prefix,
                 key_display,
-                entry.command.as_str().bright_white(),
+                truncate(&entry.command, 38).bright_white(),
                 date.truecolor(255, 190, 0),
                 time.truecolor(255, 190, 0),
             );
@@ -182,7 +182,7 @@ fn draw_actions_menu(
     let entry = &store.macros[key];
     let actions = ["Run", "Update", "Delete", "Back"];
 
-    execute!(stdout, MoveTo(0, 0)).ok();
+    execute!(stdout, MoveTo(0, 0), Clear(ClearType::All)).ok();
 
     draw_banner(store.macros.len());
 
@@ -220,10 +220,19 @@ fn draw_actions_menu(
     stdout.flush().ok();
 }
 
+fn reset_tui(stdout: &mut std::io::Stdout) {
+    let _ = terminal::enable_raw_mode();
+    execute!(stdout, Hide).ok();
+    let _ = write!(stdout, "\x1b[3J");
+    execute!(stdout, MoveTo(0, 0), Clear(ClearType::All)).ok();
+}
+
 pub fn interactive_menu() {
     let _ = terminal::enable_raw_mode();
     let mut stdout = stdout();
-    execute!(stdout, Hide, Clear(ClearType::All)).ok();
+    execute!(stdout, Hide).ok();
+    let _ = write!(stdout, "\x1b[3J");
+    execute!(stdout, MoveTo(0, 0), Clear(ClearType::All)).ok();
     let mut store = load_macros();
 
     'main: loop {
@@ -275,8 +284,7 @@ pub fn interactive_menu() {
                         run_command(&cmd);
                         pause_before_continue();
                         store = load_macros();
-                        let _ = terminal::enable_raw_mode();
-                        execute!(stdout, Hide, Clear(ClearType::All)).ok();
+                        reset_tui(&mut stdout);
                     }
                     1 => {
                         execute!(stdout, Show).ok();
@@ -303,8 +311,7 @@ pub fn interactive_menu() {
                         }
                         pause_before_continue();
                         store = load_macros();
-                        let _ = terminal::enable_raw_mode();
-                        execute!(stdout, Hide, Clear(ClearType::All)).ok();
+                        reset_tui(&mut stdout);
                     }
                     2 => {
                         execute!(stdout, Show).ok();
@@ -323,27 +330,39 @@ pub fn interactive_menu() {
                             display::ok(format!("Removed macro '{}'", key));
                             pause_before_continue();
                             store = load_macros();
-                            let _ = terminal::enable_raw_mode();
-                            execute!(stdout, Hide, Clear(ClearType::All)).ok();
+                            reset_tui(&mut stdout);
                             continue 'main;
                         } else {
                             println!();
                             display::info("Delete cancelled");
                             pause_before_continue();
-                            let _ = terminal::enable_raw_mode();
-                            execute!(stdout, Hide, Clear(ClearType::All)).ok();
+                            reset_tui(&mut stdout);
                         }
                     }
-                    3 => break,
+                    3 => {
+                        let _ = write!(stdout, "\x1b[3J");
+                        execute!(stdout, MoveTo(0, 0), Clear(ClearType::All)).ok();
+                        break;
+                    }
                     _ => {}
                 },
-                Some(KeyCode::Esc) => break,
-                Some(KeyCode::Char('q')) => break 'main,
+                Some(KeyCode::Esc) => {
+                    let _ = write!(stdout, "\x1b[3J");
+                    execute!(stdout, MoveTo(0, 0), Clear(ClearType::All)).ok();
+                    break;
+                }
+                Some(KeyCode::Char('q')) => {
+                    let _ = write!(stdout, "\x1b[3J");
+                    execute!(stdout, MoveTo(0, 0), Clear(ClearType::All)).ok();
+                    break 'main;
+                }
                 _ => {}
             }
         }
     }
 
+    let _ = write!(stdout, "\x1b[3J");
+    execute!(stdout, MoveTo(0, 0), Clear(ClearType::All)).ok();
     execute!(stdout, Show).ok();
     let _ = terminal::disable_raw_mode();
 }
