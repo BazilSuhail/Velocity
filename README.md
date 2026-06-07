@@ -24,17 +24,20 @@
 
 ## Installation
 
-### Windows (PowerShell)
+### Windows
+
+**Option 1 -- PowerShell one-liner (recommended)**
 ```powershell
-# Download and run the installer
 iex "& { $(iwr -useb https://raw.githubusercontent.com/BazilSuhail/Velocity/main/scripts/install.ps1) }"
 ```
+Adds `velo.exe` to your PATH automatically.
 
-Or with a single curl command:
-```
-curl -sL https://github.com/BazilSuhail/Velocity/releases/latest/download/velo-x86_64-pc-windows-msvc.zip -o velo.zip
-tar -xf velo.zip
-velo.exe --help
+**Option 2 -- curl (Windows 10/11)**
+```cmd
+curl -sL https://github.com/BazilSuhail/Velocity/releases/latest/download/velo-x86_64-pc-windows-msvc.zip -o %TEMP%\velo.zip
+tar -xf %TEMP%\velo.zip -C %USERPROFILE%\.velo\bin
+setx PATH "%PATH%;%USERPROFILE%\.velo\bin"
+velo --help
 ```
 
 ### Linux / macOS

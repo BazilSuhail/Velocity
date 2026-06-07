@@ -5,6 +5,7 @@ param(
 
 $Repo = "BazilSuhail/Velocity"
 $Binary = "velo.exe"
+$ArchiveName = "velo"
 $Target = "x86_64-pc-windows-msvc"
 
 # Resolve latest version if not specified
@@ -19,7 +20,7 @@ else {
 }
 
 # Build download URL
-$Archive = "$Binary-$Target.zip"
+$Archive = "$ArchiveName-$Target.zip"
 $DownloadUrl = "https://github.com/$Repo/releases/download/$Tag/$Archive"
 
 # Create install directory
