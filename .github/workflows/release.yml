@@ -95,7 +95,8 @@ jobs:
           tag_name: latest
           name: "Velocity (latest)"
           body: "Continuous release built from the latest commit on main."
-          prerelease: true
+          prerelease: false
+          make_latest: true
           files: |
             artifacts/**/*
             checksums.txt
