@@ -1,1 +1,15 @@
-/target
+# Rust build artifacts
+/target/
+
+# IDE/editor files
+.vscode/
+*.bat
+*.txt
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.rs.bk
