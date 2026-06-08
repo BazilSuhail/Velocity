@@ -1,53 +1,42 @@
-use colored::*;
+use colored::Colorize;
 
-use crate::utils::storage::load_macros;
+use crate::platform;
 
-pub fn cmd_run(key: &str) {
-    let store = load_macros();
+/// Runs the macro `key` and returns the exit code the process should use.
+pub fn cmd_run(key: &str) -> i32 {
+    if !platform::color_enabled() {
+        colored::control::set_override(false);
+    }
 
-    match store.macros.get(key) {
-        Some(entry) => {
-            let (shell, flag) = if cfg!(target_os = "windows") {
-                ("cmd", "/C")
-            } else {
-                ("sh", "-c")
-            };
-
-            println!("{}", entry.command.bright_yellow());
-            println!();
-
-            let status = std::process::Command::new(shell)
-                .arg(flag)
-                .arg(&entry.command)
-                .spawn()
-                .expect("Failed to spawn command")
-                .wait()
-                .expect("Command failed");
-
-            if !status.success() {
-                let code = status.code().unwrap_or(-1);
-                eprintln!();
-                eprintln!(
-                    "  {}  {}",
-                    "✖".bright_red(),
-                    format!("Macro '{}' exited with code {}", key, code).bright_white()
-                );
-            }
+    let store = match crate::utils::storage::load() {
+        Ok(store) => store,
+        Err(e) => {
+            eprintln!("{e}");
+            return 1;
         }
-        None => {
-            eprintln!();
-            eprintln!(
-                "  {}  {}",
-                "✖".bright_red(),
-                format!("Macro '{}' not found", key).bright_white()
-            );
-            eprintln!(
-                "  {}  {}",
-                "◆".bright_cyan(),
-                "Use: velo".bright_white()
-            );
-            eprintln!();
-            std::process::exit(1);
+    };
+
+    let Some(entry) = store.macros.get(key) else {
+        eprintln!("Macro '{key}' not found. Run `velo list` to see your macros.");
+        return 1;
+    };
+
+    println!("{}", entry.command.dimmed());
+    println!();
+
+    match platform::run_macro(&entry.command) {
+        Ok(Some(0)) => 0,
+        Ok(Some(code)) => {
+            eprintln!("Macro '{key}' exited with code {code}.");
+            code
+        }
+        Ok(None) => {
+            eprintln!("Macro '{key}' was terminated by a signal.");
+            1
+        }
+        Err(e) => {
+            eprintln!("Could not start macro '{key}': {e}");
+            127
         }
     }
 }

@@ -1,6 +1,6 @@
 [package]
 name = "velo"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 description = "Universal Command Macro Engine - store and run frequently used commands as named macros"
 authors = ["Bazil Suhail"]
@@ -15,4 +15,5 @@ serde_json = "1.0"
 dirs = "5.0"
 colored = "2"
 crossterm = "0.28"
+ratatui = "0.29"
 chrono = "0.4"

@@ -1,113 +1,49 @@
-use colored::*;
-use std::io::Write;
-
+use crate::platform;
+use crate::services::{arg_or_prompt, load_or_report, save_or_report};
 use crate::utils::display;
-use crate::utils::storage::{load_macros, save_macros, timestamp_now};
+use crate::utils::storage;
 
-pub fn cmd_update(key_opt: Option<&str>, cmd_opt: Option<&str>) {
-    let store = load_macros();
+const USAGE: &str = "velo update <KEY> <COMMAND>";
 
-    if let (Some(key), Some(command)) = (key_opt, cmd_opt) {
-        if !store.macros.contains_key(key) {
-            println!();
-            display::err(format!("Macro '{}' not found.", key));
-            println!();
-            return;
-        }
-        let mut store = store;
-        if let Some(entry) = store.macros.get_mut(key) {
-            entry.command = command.to_string();
-            entry.updated_at = timestamp_now();
-        }
-        let _ = save_macros(&store);
-        println!();
-        display::ok(format!("Updated macro '{}'", key));
-        println!(
-            "  {} {}  {} {}",
-            "↻".bright_cyan(),
-            key.bright_cyan(),
-            "→".bright_black(),
-            command.bright_yellow()
-        );
-        println!();
-        return;
-    }
-
-    if store.macros.is_empty() {
-        println!();
-        display::warn("No macros stored.");
-        println!();
-        return;
-    }
-
-    println!();
-    display::info("Current macros:");
-    display::list_table(&store);
-
-    let key = {
-        print!(
-            "  {}  {} ",
-            "▸".bright_cyan(),
-            "Enter macro name to update:".bright_white()
-        );
-        std::io::stdout().flush().ok();
-        let mut input = String::new();
-        std::io::stdin().read_line(&mut input).ok();
-        input.trim().to_string()
+/// Exit codes: 0 ok, 1 user/storage error, 2 usage error.
+pub fn cmd_update(key: Option<&str>, command: Option<&str>) -> i32 {
+    let Some(mut store) = load_or_report() else {
+        return 1;
     };
 
-    if key.is_empty() {
-        println!();
-        display::err("Name cannot be empty.");
-        println!();
-        return;
+    if platform::is_interactive() && (key.is_none() || command.is_none()) {
+        display::info("Current macros:");
+        display::list_table(&store);
     }
 
-    if !store.macros.contains_key(&key) {
-        println!();
-        display::err(format!("Macro '{}' not found.", key));
-        println!();
-        return;
-    }
-
-    let current = &store.macros[&key].command;
-    println!();
-    display::info(format!("Current command: {}", current));
-
-    let command = {
-        print!(
-            "  {}  {} ",
-            "▸".bright_cyan(),
-            "New command:".bright_white()
-        );
-        std::io::stdout().flush().ok();
-        let mut input = String::new();
-        std::io::stdin().read_line(&mut input).ok();
-        input.trim().to_string()
+    let Some(key) = arg_or_prompt(key, "Enter macro name to update:", USAGE) else {
+        return 2;
     };
-
-    if command.is_empty() {
-        println!();
-        display::warn("Update cancelled.");
-        println!();
-        return;
+    let Some(current) = store.macros.get(&key).map(|e| e.command.clone()) else {
+        display::err(format!("Macro '{key}' not found."));
+        return 1;
+    };
+    if command.is_none() && platform::is_interactive() {
+        display::info(format!("Current command: {current}"));
     }
 
-    let mut store = store;
-    if let Some(entry) = store.macros.get_mut(&key) {
-        entry.command = command.clone();
-        entry.updated_at = timestamp_now();
+    let Some(command) = arg_or_prompt(command, "New command:", USAGE) else {
+        return 2;
+    };
+    if command.trim().is_empty() {
+        display::err("Command cannot be empty.");
+        return 1;
     }
-    let _ = save_macros(&store);
 
-    println!();
-    display::ok(format!("Updated macro '{}'", key));
-    println!(
-        "  {} {}  {} {}",
-        "↻".bright_cyan(),
-        key.bright_cyan(),
-        "→".bright_black(),
-        command.bright_yellow()
-    );
-    println!();
+    let Some(entry) = store.macros.get_mut(&key) else {
+        display::err(format!("Macro '{key}' not found."));
+        return 1;
+    };
+    entry.command = command.clone();
+    entry.updated_at = storage::timestamp_now();
+    if !save_or_report(&store) {
+        return 1;
+    }
+    display::ok(format!("Updated macro '{key}'  {command}"));
+    0
 }

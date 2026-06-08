@@ -4,153 +4,254 @@
 [![Version](https://img.shields.io/github/v/release/BazilSuhail/Velocity?style=flat-square)](https://github.com/BazilSuhail/Velocity/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 [![Rust](https://img.shields.io/badge/rust-1.85+-orange?style=flat-square)](https://www.rust-lang.org)
-[![Platform](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey?style=flat-square)](https://github.com/BazilSuhail/Velocity/releases)
+[![Platform](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos%20%7C%20wsl-lightgrey?style=flat-square)](https://github.com/BazilSuhail/Velocity/releases)
 
-**Velocity** is a cross-platform command-macro engine that lets you store, browse, and execute frequently used terminal commands under short, memorable names. Think of it as a personal hotkey registry for your shell.
+Velocity is a single-binary command-line tool, invoked as `velo`, for storing shell commands as named macros and running them by key. Give a long command a short name once, then run it from any directory, from a script, or from an interactive terminal UI. Macros live in one JSON file on your machine. velo has no daemon, no background service, and no network access.
 
-![Velocity CLI](docs/velo-cli.png)
+![velo CLI](docs/velo-cli.png)
 
-> [!NOTE]
-> Velocity runs entirely in the terminal. No GUI, no daemon, no cloud dependency. Just a single binary and a JSON file.
+## Motivation
 
----
+Velocity was built by [Bazil Suhail](https://bazilsuhail.netlify.app/) for speed. Every developer retypes the same long commands all day: starting a dev server, running a build, deploying to staging. Velocity removes that friction. You store each command once, then get it back with a few keystrokes.
+
+Speed is the design goal throughout:
+
+- **Fast to start.** A single native binary with no runtime, no interpreter, and no daemon.
+- **Fast to use.** Run `velo dev` from any directory, or pick a macro from the terminal UI with the arrow keys.
+- **Fast to change.** Edit a command in place without touching a config file.
+
+## Why Velocity
+
+- A long build, deploy, or test command becomes a three-letter key.
+- Scripts can call `velo <KEY>` and check the exit code, which is the macro's own code.
+- One binary, one JSON file. Back it up by copying it.
+- The same commands work on Windows, Linux, macOS, and WSL.
 
 ## Features
 
-- **Interactive TUI** -- Cursor-navigable interface (arrow keys) to browse, run, update, or delete macros without leaving the terminal
-- **Direct execution** -- `velo dev` instantly runs the macro named `dev`
-- **Persistent storage** -- Macros are saved as JSON and survive reboots
-- **Timestamps** -- Each macro tracks creation and last-updated time
-- **Cross-platform** -- Works on Windows, Linux, and macOS
-- **Hot gradient ASCII** -- Branded neon-red-to-orange header on every screen
-- **Single binary** -- No runtime dependencies; just download and run
+**Interactive TUI**
 
----
+- Browse, run, add, edit, delete, and filter macros from the keyboard.
+- An actions menu per macro: Run, Update, Delete, Back.
+- Filter by key or command text as you type.
+- Help overlay (`?`) with the Browse keys and the command forms.
+- Running a macro from the TUI suspends the screen, runs the command in the normal console, and waits for Enter before it returns.
+- The screen redraws only when state changes.
 
-> [!IMPORTANT]
-> Velocity is currently in active development. Breaking changes to the JSON schema may occur before a stable 1.0 release. Always back up `macros.json` before updating.
+**Command line**
 
----
+- `velo <KEY>` and `velo run <KEY>` run a macro and exit with its exit code.
+- `velo add`, `velo update`, `velo delete`, `velo list` manage macros.
+- `velo` with no arguments opens the TUI in a terminal, and prints the list when output is piped.
+- Prompts for missing arguments in a terminal. Scripts get a usage error instead of a hang.
 
-## Installation
+**Storage and safety**
 
-### Windows
+- All macros live in `macros.json`. The location is per platform, and `VELO_HOME` overrides it.
+- Writes are atomic: velo writes a temporary file, then renames it over the original.
+- A corrupt `macros.json` is never overwritten. velo reports the path and refuses to write until you fix it.
+- Older flat-format files are converted automatically on load.
+- Keys are validated: no spaces, no `/ \ " '`, no control characters.
+- `delete` asks for confirmation in a terminal. `--yes` skips the prompt.
 
-**Option 1 -- PowerShell one-liner (recommended)**
+**Cross-platform**
+
+- Windows (Windows Terminal, PowerShell, cmd, and the classic console), Linux, macOS (Terminal.app and iTerm2), and WSL.
+- Macros run through `cmd /C` on Windows and `sh -c` on Linux and macOS.
+- Prebuilt binaries for Linux x86_64 and aarch64, macOS x86_64 and aarch64, and Windows x86_64.
+
+**Scripting**
+
+- Exit codes: `0` success, the macro's code when running, `1` for errors, `2` for usage errors, `127` when the macro's shell cannot start.
+- Non-interactive mode: output is plain when piped, and nothing prompts.
+- `velo delete <KEY> --yes` for scripts.
+
+**Customization through environment variables**
+
+- `VELO_HOME` chooses the directory for `macros.json`.
+- `VELO_ASCII` forces ASCII glyphs.
+- `NO_COLOR`, `TERM=dumb`, and `CLICOLOR_FORCE=1` control color.
+- `COLORTERM=truecolor` selects the 24-bit palette.
+
+See [Configuration](docs/configuration.md#environment-variables) for the full list.
+
+## UI tour
+
+velo's TUI, in a 100 by 30 terminal. The banner shows at 60 or more columns and 20 or more rows. The details pane shows at 100 or more columns.
+
+```text
+      ██╗   ██╗███████╗██╗     ██████╗
+      ██║   ██║██╔════╝██║    ██╔═══██╗
+      ██║   ██║█████╗  ██║    ██║   ██║
+      ╚██╗ ██╔╝██╔══╝  ██║    ██║   ██║
+       ╚████╔╝ ███████╗███████╗╚██████╔╝
+        ╚═══╝  ╚══════╝╚══════╝ ╚═════╝
+  Universal Command Macro Engine  |  v0.2.0  |  4 macros  |  by Bazil Suhail
+╭ Macros (4) ────────────────────────────────────────────────╮╭ Detail ────────────────────────────╮
+│  KEY     COMMAND                           UPDATED         ││key000                              │
+│▸ key000  echo a long command number 0 th…  2026-10-24 10:00││                                    │
+│  key001  echo a long command number 1 th…  2026-10-24 10:00││echo a long command number 0 that   │
+│  key002  echo a long command number 2 th…  2026-10-24 10:00││goes on and on                      │
+│  key003  echo a long command number 3 th…  2026-10-24 10:00││                                    │
+│                                                            ││Created  2026-10-24 10:00:00        │
+│                                                            ││Updated  2026-10-24 10:00:00        │
+│                                                            ││                                    │
+│                                                            ││                                    │
+│                                                            ││                                    │
+│                                                            ││                                    │
+│                                                            ││                                    │
+│                                                            ││                                    │
+│                                                            ││                                    │
+│                                                            ││                                    │
+│                                                            ││                                    │
+│                                                            ││                                    │
+│                                                            ││                                    │
+│                                                            ││                                    │
+╰────────────────────────────────────────────────────────────╯╰────────────────────────────────────╯
+BROWSE                                                                                    4/4 macros
+Up/Down move  Enter actions  n new  e edit  d delete  / filter  ? help  q quit
+```
+
+What you see:
+
+- **Header.** The banner, then a subtitle with the version and the macro count. Below 60 columns or 20 rows, a one-line title replaces the banner.
+- **Macro table.** KEY, COMMAND, and UPDATED. The selected row starts with a `▸` marker (`>` where Unicode is off). Long commands are cut with an ellipsis. UPDATED is hidden below 60 columns.
+- **Details pane.** The selected macro's key, full command, and timestamps. Shown at 100 columns and wider.
+- **Status line.** The current mode (BROWSE, ACTIONS, FILTER, and so on), the macro count, and any message such as the exit code of the last run.
+- **Footer.** The keys that work in the current mode.
+
+### Actions menu
+
+Press `Enter` on a macro to open its actions menu. It is a small bordered box, titled with the macro's key, that lists four entries:
+
+```text
+╭ api ─────────────────────────────────╮
+│▸ Run                                 │
+│  Update                              │
+│  Delete                              │
+│  Back                                │
+│Up/Down choose  Enter select  Esc back│
+╰──────────────────────────────────────╯
+```
+
+- `Up` and `Down` (or `k` and `j`) move the highlight.
+- `Enter` runs the highlighted entry.
+- `Esc` or `q` closes the menu without doing anything.
+
+**Run** executes the macro in your terminal and returns to the list when you press Enter. **Update** opens the command editor. **Delete** asks for confirmation first. **Back** closes the menu.
+
+### Help overlay
+
+Press `?` in Browse mode to open the help overlay. It is a box over the list that shows two sections: the Browse keys, and the command forms (`velo add <key> <command>`, `velo update`, `velo delete`, `velo list`, and `velo <key>` to run). Press `?` or `Esc` to close it.
+
+## Quick start
+
+Under a minute, on Linux, macOS, or WSL:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/BazilSuhail/Velocity/main/scripts/install.sh | bash
+# open a new terminal, then:
+velo add hello "echo hello from velo"
+velo hello
+velo                       # opens the TUI; press q to quit
+```
+
+On Windows, in PowerShell:
+
 ```powershell
-iex "& { $(iwr -useb https://raw.githubusercontent.com/BazilSuhail/Velocity/main/scripts/install.ps1) }"
-```
-Adds `velo.exe` to your PATH automatically.
-
-**Option 2 -- curl (Windows 10/11)**
-```cmd
-curl -sL https://github.com/BazilSuhail/Velocity/releases/latest/download/velo-x86_64-pc-windows-msvc.zip -o %TEMP%\velo.zip
-tar -xf %TEMP%\velo.zip -C %USERPROFILE%\.velo\bin
-setx PATH "%PATH%;%USERPROFILE%\.velo\bin"
-velo --help
+irm https://raw.githubusercontent.com/BazilSuhail/Velocity/main/scripts/install.ps1 | iex
+# open a new terminal, then:
+velo add hello "echo hello from velo"
+velo hello
+velo
 ```
 
-### Linux / macOS
-```bash
-curl -sL https://raw.githubusercontent.com/BazilSuhail/Velocity/main/scripts/install.sh | bash
-```
+Full install options, building from source, and PATH setup are in [docs/setup.md](docs/setup.md).
 
-Or manually:
-```bash
-# Linux (x86_64)
-curl -sL https://github.com/BazilSuhail/Velocity/releases/latest/download/velo-x86_64-unknown-linux-gnu.tar.gz | tar xz
-./velo --help
+## Commands
 
-# macOS (Apple Silicon)
-curl -sL https://github.com/BazilSuhail/Velocity/releases/latest/download/velo-aarch64-apple-darwin.tar.gz | tar xz
-./velo --help
+| Command | What it does |
+|---------|--------------|
+| `velo` | Open the TUI in a terminal. Prints the list when output is piped. |
+| `velo <KEY>` | Run a macro. Same as `velo run <KEY>`. |
+| `velo run <KEY>` | Run a macro. Use this for a key that has the same name as a subcommand. |
+| `velo add [KEY] [COMMAND]` | Save a new macro. Prompts for missing arguments in a terminal. |
+| `velo update [KEY] [COMMAND]` | Change the command of an existing macro. |
+| `velo delete [KEY] [-y, --yes]` | Remove a macro. Asks first unless `--yes` is given. |
+| `velo list` | Print all macros as a table, sorted by key. |
+| `velo --help`, `velo -h` | Show help. |
+| `velo --version` | Show the version. |
 
-# macOS (Intel)
-curl -sL https://github.com/BazilSuhail/Velocity/releases/latest/download/velo-x86_64-apple-darwin.tar.gz | tar xz
-./velo --help
-```
+Full reference, including exit codes and scripting examples: [docs/commands.md](docs/commands.md).
 
----
+## Keyboard shortcuts
 
-## Usage
+Browse mode, the default in the TUI:
 
-> [!TIP]
-> For a full walkthrough of every command with runnable examples, see the [Commands Reference](docs/commands.md).
+| Key | Action |
+|-----|--------|
+| `Up` / `Down`, `k` / `j` | Move the selection |
+| `PageUp` / `PageDown` | Move 10 rows |
+| `Home` / `g`, `End` / `G` | Jump to the first or last macro |
+| `Enter` | Open the actions menu |
+| `n` | New macro (key, then command) |
+| `e` | Edit the selected command |
+| `d` | Delete the selected macro (confirms first) |
+| `/` | Filter by key or command |
+| `?` | Help overlay |
+| `q`, `Ctrl+C` | Quit |
 
-### Commands
+All modes are in [docs/keybindings.md](docs/keybindings.md).
 
-| Command | Description |
-|---------|-------------|
-| `velo` | Open the interactive TUI (cursor navigation) |
-| `velo list` | List all stored macros |
-| `velo add <key> <command>` | Store a new macro |
-| `velo delete <key>` | Remove a macro |
-| `velo update <key> <command>` | Change a macro's command |
-| `velo <key>` | Run a macro directly (shorthand) |
-| `velo --help` | Show colored help with all options |
+## Configuration
 
-### Examples
+velo has no config file. Macros are stored in one file, `macros.json`:
 
-```
-velo add dev "npm run dev"
-velo add build "cargo build --release"
-velo dev
-velo list
-velo delete dev
-velo update build "bun run build"
-```
+| Platform | Default location |
+|----------|------------------|
+| Linux and WSL | `~/.config/velo/macros.json` (or `$XDG_CONFIG_HOME/velo`) |
+| macOS | `~/Library/Application Support/velo/macros.json` |
+| Windows | `%APPDATA%\velo\macros.json` |
 
-### Interactive TUI
+Set `VELO_HOME` to a directory to store macros somewhere else, such as a synced folder. The most useful environment variables are `VELO_HOME`, `VELO_ASCII` (force ASCII glyphs), and `NO_COLOR` (turn off color).
 
-Running `velo` with no arguments opens the interactive menu:
+Details, the file format, and backup steps are in [docs/configuration.md](docs/configuration.md).
 
-- `Up/Down` -- Navigate through macros and Exit
-- `Enter` -- Select a macro to view actions (Run / Update / Delete / Back)
-- `Esc` -- Go back to main menu
-- `q` -- Quit
+## Guides
 
-The first time you enter, **Exit** is selected by default.
+| Guide | Read it when you want to |
+|-------|--------------------------|
+| [Setup](docs/setup.md) | Install velo, build from source, set PATH, configure storage, update, or uninstall |
+| [Commands](docs/commands.md) | Look up a command, flag, or exit code |
+| [Keybindings](docs/keybindings.md) | Learn the TUI keys for each mode |
+| [Configuration](docs/configuration.md) | Find `macros.json`, set `VELO_HOME`, back up or migrate your store |
+| [Platforms](docs/platforms.md) | Install and run velo on Windows, macOS, Linux, or WSL, including quoting rules |
+| [Troubleshooting](docs/troubleshooting.md) | Fix a corrupt file, a broken terminal, missing colors, or a command not found |
+| [Development](docs/development.md) | Understand the architecture, build, lint, and release the project |
+| [Contributing](CONTRIBUTING.md) | Report a bug, propose a change, and open a pull request |
+| [Documentation index](docs/index.md) | See all guides in one place |
+| [Changelog](CHANGELOG.md) | See what changed in each version |
 
-> [!NOTE]
-> The TUI enters raw terminal mode while active. When you run or edit a macro, Velocity automatically exits raw mode, runs the command, and re-enters raw mode afterward.
+## Setup
 
----
+Requirements, install options, PATH setup, and first-run steps are in [docs/setup.md](docs/setup.md). Prebuilt binaries need no Rust toolchain. Building from source needs Rust 1.85 or newer, because the crate uses edition 2024.
 
-## Why Rust?
+## Contributing
 
-| Concern | Rust's answer |
-|---------|---------------|
-| **Startup time** | Near-zero; TUI renders instantly |
-| **Binary size** | Stripped binary is ~3 MB with no runtime |
-| **Cross-compilation** | `cargo build --target` for all three OSes from a single CI pipeline |
-| **Memory safety** | No segfaults, no use-after-free, no data races |
-| **Dependency management** | Cargo's semantic versioning and lockfile guarantee reproducible builds |
-| **Terminal control** | `crossterm` provides a zero-cost abstraction over raw TTY on every platform |
-| **Single binary** | Statically linked; no Python, Node, or JVM required |
+Bug reports, documentation fixes, and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) for the development setup, the checks every pull request must pass (`cargo fmt --check` and `cargo clippy --all-targets -- -D warnings`), and the commit style.
 
-Rust was chosen over alternatives (Go, Python, Node.js) because Velocity demands **sub-millisecond startup**, a **single distributable binary**, and **safe systems-level terminal I/O** -- all of which are Rust's sweet spot.
+## Roadmap
 
----
+These items are not implemented yet. This list is not a promise of dates.
 
-## Building from Source
-
-```bash
-git clone https://github.com/BazilSuhail/Velocity.git
-cd Velocity
-cargo build --release
-./target/release/velo --help
-```
-
-Requires Rust 1.85 or later.
-
----
-
-## Author
-
-**Bazil Suhail** -- [bazilsuhail.netlify.app](https://bazilsuhail.netlify.app)
-
----
+- **Mouse support.** velo ignores the mouse. Everything is keyboard-driven.
+- **Automated tests.** The repository has no test suite yet. Checks are formatting, clippy, and manual runs.
+- **Cursor editing in text fields.** Input fields are append-only. Backspace and Ctrl+U are the only edit keys.
 
 ## License
 
-MIT
+velo is released under the [MIT License](LICENSE). The MIT license lets anyone use, copy, modify, merge, publish, distribute, sublicense, and sell the software for any purpose, including commercial use. The only requirement is to keep the copyright notice and the license text in copies of the software.
+
+## Author
+
+velo is written and maintained by [Bazil Suhail](https://bazilsuhail.netlify.app). Source code and issues are at [github.com/BazilSuhail/Velocity](https://github.com/BazilSuhail/Velocity).
