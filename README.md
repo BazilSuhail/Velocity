@@ -10,6 +10,101 @@ Velocity is a single-binary command-line tool, invoked as `velo`, for storing sh
 
 ![velo CLI](docs/velo-cli.png)
 
+Install scripts live in `C:\Users\lorde\OneDrive\Documents\git-commit\Velocity\scripts` (`install.ps1` for Windows, `install.sh` for macOS and Linux).
+
+## Installation
+
+Velocity runs on Windows 10 and 11, macOS, and Linux (including WSL). Choose the section for your system. Each path ends with `velo --version` printing a version in a new terminal.
+
+Every route below needs the repository. Get it with git, and update it later with `git pull`:
+
+```text
+git clone https://github.com/BazilSuhail/Velocity.git
+cd Velocity
+```
+
+Prebuilt archives for each release are on the [releases page](https://github.com/BazilSuhail/Velocity/releases). The one-line scripts download those archives, so they work once a release is published. Until v0.2.0 is published, use the build-from-source option.
+
+### Windows
+
+**Option A: one command (no build tools).** Run this in PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/BazilSuhail/Velocity/main/scripts/install.ps1 | iex
+```
+
+The script downloads `velo.exe` into `%USERPROFILE%\.velo\bin` and adds that folder to your user PATH. Open a new terminal afterwards. Pass `-NoPath` to skip the PATH change, or `-Version 0.2.0` to pick a release.
+
+**Option B: build from source with git.**
+
+1. Install git from [git-scm.com](https://git-scm.com/download/win), or run `winget install --id Git.Git -e`.
+2. Install Rust from [rustup.rs](https://rustup.rs). Accept the default stable toolchain. When Windows asks for the Visual Studio C++ Build Tools, install them with the "Desktop development with C++" workload. Rust needs that linker on Windows.
+3. In PowerShell:
+
+   ```powershell
+   git clone https://github.com/BazilSuhail/Velocity.git
+   cd Velocity
+   cargo install --path .
+   ```
+
+   `cargo install` puts `velo.exe` in `%USERPROFILE%\.cargo\bin`. The rustup installer adds that folder to PATH.
+
+4. Open a new terminal and run `velo --version`.
+
+### macOS
+
+**Option A: one command.** The script installs into `~/.velo/bin` and adds that folder to your shell profile:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/BazilSuhail/Velocity/main/scripts/install.sh | bash
+```
+
+**Option B: build from source with git.**
+
+```bash
+xcode-select --install                      # Apple command line tools, includes git and the C linker
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source "$HOME/.cargo/env"
+git clone https://github.com/BazilSuhail/Velocity.git
+cd Velocity
+cargo install --path .
+velo --version
+```
+
+### Linux
+
+**Option A: one command.** Works on x86_64 and arm64:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/BazilSuhail/Velocity/main/scripts/install.sh | bash
+```
+
+**Option B: build from source with git.** Install the build tools with your package manager, then:
+
+```bash
+# Debian or Ubuntu
+sudo apt install -y git build-essential curl
+# Fedora
+sudo dnf install -y git gcc curl
+
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source "$HOME/.cargo/env"
+git clone https://github.com/BazilSuhail/Velocity.git
+cd Velocity
+cargo install --path .
+velo --version
+```
+
+### Update and uninstall
+
+- **Update from source:** `git pull`, then `cargo install --path . --force`.
+- **Update from the script:** run the installer again.
+- **Uninstall:** `cargo uninstall velo`, or delete the install folder (`%USERPROFILE%\.velo` on Windows, `~/.velo` elsewhere) and remove it from PATH.
+
+Your macros stay in the config folder, so uninstalling does not delete them. The location is in [Configuration](docs/configuration.md). Back up `macros.json` first if you want to keep them.
+
+More detail, including PATH setup and troubleshooting, is in [docs/setup.md](docs/setup.md).
+
 ## Motivation
 
 Velocity was built by [Bazil Suhail](https://bazilsuhail.netlify.app/) for speed. Every developer retypes the same long commands all day: starting a dev server, running a build, deploying to staging. Velocity removes that friction. You store each command once, then get it back with a few keystrokes.
@@ -56,9 +151,9 @@ Speed is the design goal throughout:
 
 **Cross-platform**
 
-- Windows (Windows Terminal, PowerShell, cmd, and the classic console), Linux, macOS (Terminal.app and iTerm2), and WSL.
+- Windows, Linux, macOS, and WSL. Windows Terminal and PowerShell are the recommended hosts on Windows.
 - Macros run through `cmd /C` on Windows and `sh -c` on Linux and macOS.
-- Prebuilt binaries for Linux x86_64 and aarch64, macOS x86_64 and aarch64, and Windows x86_64.
+- Release builds for Linux x86_64 and aarch64, macOS x86_64 and aarch64, and Windows x86_64. Available once a release is published.
 
 **Scripting**
 
@@ -77,40 +172,7 @@ See [Configuration](docs/configuration.md#environment-variables) for the full li
 
 ## UI tour
 
-velo's TUI, in a 100 by 30 terminal. The banner shows at 60 or more columns and 20 or more rows. The details pane shows at 100 or more columns.
-
-```text
-      ██╗   ██╗███████╗██╗     ██████╗
-      ██║   ██║██╔════╝██║    ██╔═══██╗
-      ██║   ██║█████╗  ██║    ██║   ██║
-      ╚██╗ ██╔╝██╔══╝  ██║    ██║   ██║
-       ╚████╔╝ ███████╗███████╗╚██████╔╝
-        ╚═══╝  ╚══════╝╚══════╝ ╚═════╝
-  Universal Command Macro Engine  |  v0.2.0  |  4 macros  |  by Bazil Suhail
-╭ Macros (4) ────────────────────────────────────────────────╮╭ Detail ────────────────────────────╮
-│  KEY     COMMAND                           UPDATED         ││key000                              │
-│▸ key000  echo a long command number 0 th…  2026-10-24 10:00││                                    │
-│  key001  echo a long command number 1 th…  2026-10-24 10:00││echo a long command number 0 that   │
-│  key002  echo a long command number 2 th…  2026-10-24 10:00││goes on and on                      │
-│  key003  echo a long command number 3 th…  2026-10-24 10:00││                                    │
-│                                                            ││Created  2026-10-24 10:00:00        │
-│                                                            ││Updated  2026-10-24 10:00:00        │
-│                                                            ││                                    │
-│                                                            ││                                    │
-│                                                            ││                                    │
-│                                                            ││                                    │
-│                                                            ││                                    │
-│                                                            ││                                    │
-│                                                            ││                                    │
-│                                                            ││                                    │
-│                                                            ││                                    │
-│                                                            ││                                    │
-│                                                            ││                                    │
-│                                                            ││                                    │
-╰────────────────────────────────────────────────────────────╯╰────────────────────────────────────╯
-BROWSE                                                                                    4/4 macros
-Up/Down move  Enter actions  n new  e edit  d delete  / filter  ? help  q quit
-```
+The TUI adapts to the terminal size. The banner shows at 60 or more columns and 20 or more rows, and the details pane at 100 or more columns. The screenshot at the top of this page shows the browse view in a 100 by 30 terminal.
 
 What you see:
 
@@ -122,17 +184,7 @@ What you see:
 
 ### Actions menu
 
-Press `Enter` on a macro to open its actions menu. It is a small bordered box, titled with the macro's key, that lists four entries:
-
-```text
-╭ api ─────────────────────────────────╮
-│▸ Run                                 │
-│  Update                              │
-│  Delete                              │
-│  Back                                │
-│Up/Down choose  Enter select  Esc back│
-╰──────────────────────────────────────╯
-```
+Press `Enter` on a macro to open its actions menu. It is a small bordered box, titled with the macro's key, with four entries: **Run**, **Update**, **Delete**, and **Back**.
 
 - `Up` and `Down` (or `k` and `j`) move the highlight.
 - `Enter` runs the highlighted entry.
